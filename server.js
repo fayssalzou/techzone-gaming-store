@@ -13,11 +13,15 @@ app.use(express.static(path.join(__dirname, "public")));
 // نظام قراءة المنتجات تلقائياً من ملف JSON محلي لتفادي مشاكل السيرفر
 const productsPath = path.join(__dirname, "data", "products.json");
 
-// منتجات افتراضية ثابتة ومحمية في حال عدم وجود ملف المنتجات
 const defaultProducts = [
   { id: 1, name: "Dahua C900 256GB SSD NVMe M.2", price: 15000, description: "هارد تخزين داخلي فائق السرعة يدعم واجهة PCIe Gen3.0 x4 وضمان 3 سنوات.", emoji: "images/dahua.png" },
   { id: 2, name: "Gaming Mouse RGB - Corsair Harpoon", price: 5500, description: "فأرة ألعاب سلكية عالية الدقة بسرعة 12000 DPI مع إضاءة RGB ديناميكية وتصميم مريح.", emoji: "images/mouse.png" }
 ];
+
+// السطر البرمجي الحاسم لحل مشكلة Cannot GET / وعرض الواجهة فوراً
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "index.html"));
+});
 
 app.get("/api/products", (req, res) => {
   if (fs.existsSync(productsPath)) {
