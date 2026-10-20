@@ -10,7 +10,6 @@ const PORT = process.env.PORT || 3000;
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
 
-// نظام قراءة المنتجات تلقائياً من ملف JSON محلي لتفادي مشاكل السيرفر
 const productsPath = path.join(__dirname, "data", "products.json");
 
 const defaultProducts = [
@@ -18,9 +17,14 @@ const defaultProducts = [
   { id: 2, name: "Gaming Mouse RGB - Corsair Harpoon", price: 5500, description: "فأرة ألعاب سلكية عالية الدقة بسرعة 12000 DPI مع إضاءة RGB ديناميكية وتصميم مريح.", emoji: "images/mouse.png" }
 ];
 
-// السطر البرمجي الحاسم لحل مشكلة Cannot GET / وعرض الواجهة فوراً
+// توجيه الصفحة الرئيسية للزوار
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
+});
+
+// التوجيه الحاسم والجديد لفتح لوحة التحكم بنجاح على خادم Render
+app.get("/admin", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "admin.html"));
 });
 
 app.get("/api/products", (req, res) => {
