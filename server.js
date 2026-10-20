@@ -1,6 +1,6 @@
 ﻿const express = require("express");
 const path = require("path");
-const sqlite3 = require("sqlite3").verbose();
+const fs = require("fs");
 const dotenv = require("dotenv");
 dotenv.config();
 
@@ -10,30 +10,41 @@ const PORT = process.env.PORT || 3000;
 app.use(express.json());
 app.use(express.static(path.join(__dirname, "public")));
 
-const db = new sqlite3.Database(path.join(__dirname, "data", "techzone.sqlite"), (err) => {
-    if (err) console.error("قاعدة البيانات لم تفتح:", err.message);
-    else console.log("متصل بقاعدة SQLite بنجاح");
-});
+// نظام قراءة المنتجات تلقائياً من ملف JSON محلي لتفادي مشاكل السيرفر
+const productsPath = path.join(__dirname, "data", "products.json");
 
-db.serialize(() => {
-    db.run(`CREATE TABLE IF NOT EXISTS products (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, price REAL NOT NULL, description TEXT, emoji TEXT)`);
-});
+// منتجات افتراضية ثابتة ومحمية في حال عدم وجود ملف المنتجات
+const defaultProducts = [
+  { id: 1, name: "Dahua C900 256GB SSD NVMe M.2", price: 15000, description: "هارد تخزين داخلي فائق السرعة يدعم واجهة PCIe Gen3.0 x4 وضمان 3 سنوات.", emoji: "images/dahua.png" },
+  { id: 2, name: "Gaming Mouse RGB - Corsair Harpoon", price: 5500, description: "فأرة ألعاب سلكية عالية الدقة بسرعة 12000 DPI مع إضاءة RGB ديناميكية وتصميم مريح.", emoji: "images/mouse.png" }
+];
 
 app.get("/api/products", (req, res) => {
-    db.all("SELECT * FROM products", [], (err, rows) => {
-        if (err) return res.status(500).json({ error: err.message });
-        res.json(rows);
-    });
+  if (fs.existsSync(productsPath)) {
+    try {
+      const fileData = fs.readFileSync(productsPath, "utf8");
+      return res.json(JSON.parse(fileData));
+    } catch (e) {
+      return res.json(defaultProducts);
+    }
+  }
+  res.json(defaultProducts);
 });
 
 app.post("/api/products", (req, res) => {
-    const { name, price, description, emoji } = req.body;
-    db.run(`INSERT INTO products (name, price, description, emoji) VALUES (?, ?, ?, ?)`, [name, price, description, emoji], function(err) {
-        if (err) return res.status(500).json({ error: err.message });
-        res.json({ id: this.lastID });
-    });
+  const { name, price, description, emoji } = req.body;
+  let products = [];
+  if (fs.existsSync(productsPath)) {
+    try { products = JSON.parse(fs.readFileSync(productsPath, "utf8")); } catch (e) {}
+  } else {
+    products = [...defaultProducts];
+  }
+  const newProduct = { id: Date.now(), name, price: parseFloat(price), description, emoji };
+  products.push(newProduct);
+  fs.writeFileSync(productsPath, JSON.stringify(products, null, 2), "utf8");
+  res.json(newProduct);
 });
 
 app.listen(PORT, () => {
-    console.log(`TechZone running at http://localhost:${PORT}`);
+  console.log(`TechZone Gaming Running smoothly at port ${PORT}`);
 });
